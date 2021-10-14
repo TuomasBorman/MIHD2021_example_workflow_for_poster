@@ -17,7 +17,7 @@ Other material about poster and the _miaverse_ project you can find by following
 **You can find the example workflow in three different formats**
 
 -   [R Markdown](https://github.com/TuomasBorman/MIHD2021_example_workflow_for_poster/blob/main/example_workflow.Rmd)
--   [html](https://github.com/TuomasBorman/MIHD2021_example_workflow_for_poster/blob/main/example_workflow.html
+-   [html](https://github.com/TuomasBorman/MIHD2021_example_workflow_for_poster/blob/main/example_workflow.html)
 -   [pdf](https://github.com/TuomasBorman/MIHD2021_example_workflow_for_poster/blob/main/example_workflow.pdf)
 
 You can load them by clicking _Download_ button (at the upper right corner).
