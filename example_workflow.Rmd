@@ -1,9 +1,9 @@
 ---
 title: "Clinical microbiome data science - example workflow"
 output:
-  pdf_document: default
   html_document:
     df_print: paged
+  pdf_document: default
 ---
 
 This in an example data analysis for poster. Poster was presented in conference 
@@ -38,7 +38,7 @@ of complementary data sources in a single reproducible workflow.
 This is a reproducible workflow. **You can run this example workflow**
 
 -   Copy-paste code chunks and run them
--   Download this R markdown file and run it
+-   Download R markdown file and run it
 
 
 ### Install and load required packages
