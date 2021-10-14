@@ -1,0 +1,325 @@
+---
+title: "Clinical microbiome data science - example workflow"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+This in an example data analysis for poster. Poster was presented in conference 
+[Microbiome Interactions in Health and Disease](https://coursesandconferences.wellcomeconnectingscience.org/event/microbiome-interactions-in-health-and-disease-virtual-conference-20211013/). 
+It was held on 13-15 October 2021. 
+
+Other material about poster and the _miaverse_ project you can find by following the links below
+
+-   Poster
+    -   [poster](https://github.com/microbiome/outreach/blob/main/posters/20211013_MIHD21/miaverse_poster_20210929.pdf)
+    -   [abstract](https://github.com/microbiome/outreach/blob/main/posters/20211013_MIHD21/miaverse_poster_abstract_20210901.pdf)
+    -   [lightning talk](https://www.youtube.com/watch?v=A4URIEx9v1s)
+
+-   _miaverse_
+    -   [homepage](https://microbiome.github.io/)
+    -   [Orchestrating Microbiome Analysis](https://microbiome.github.io/OMA/)
+
+
+## Example workflow
+
+Multi-omics means that we integrate data from multiple sources. For example, 
+we can integrate microbial abundances in the gut with biomolecular profiling data
+from blood samples. This kind of integrative multi-omic approaches can support the 
+analysis of microbiome dysbiosis and facilitate the discovery of novel biomarkers 
+for health and disease.
+
+The data containers that the _miaverse_ utilizes are scalable and they can contain
+different types of data in a same container. Because of that, the _miaverse_ is
+well-suitable for multi-assay microbiome data which incorporates different types 
+of complementary data sources in a single reproducible workflow. 
+
+This is a reproducible workflow. **You can run this example workflow**
+
+-   Copy-paste code chunks and run them
+-   Download this R markdown file and run it
+
+
+### Install and load required packages
+
+Here, all required packages are installed and loaded into the session.
+If packages are already installed, installation step is skipped; only uninstalled
+packages are installed. 
+
+```{r warning = FALSE, message = FALSE}
+# List of packages that we need from cran and bioc 
+cran_pkg <- c("BiocManager", "ggplot2", "pheatmap", "stringr")
+bioc_pkg <- c("microbiome", "microbiomeDataSets", "mia")
+
+# Gets those packages that are already installed
+cran_pkg_already_installed <- cran_pkg[ cran_pkg %in% installed.packages() ]
+bioc_pkg_already_installed <- bioc_pkg[ bioc_pkg %in% installed.packages() ]
+
+# Gets those packages that need to be installed
+cran_pkg_to_be_installed <- setdiff(cran_pkg, cran_pkg_already_installed)
+bioc_pkg_to_be_installed <- setdiff(bioc_pkg, bioc_pkg_already_installed)
+```
+
+```{r warning = FALSE, message = FALSE}
+# If there are packages that need to be installed, installs them from CRAN
+if( length(cran_pkg_to_be_installed) ) {
+   install.packages(cran_pkg_to_be_installed)
+}
+```
+
+```{r warning = FALSE, message = FALSE}
+# If there are packages that need to be installed, installs them from Bioconductor
+if( length(bioc_pkg_to_be_installed) ) {
+   BiocManager::install(bioc_pkg_to_be_installed, ask = F)
+}
+```
+ 
+Now all required packages are installed, so let's load them into the session.
+Some function names occur in multiple packages. That is why miaverse's packages
+mia and miaViz are prioritized. Packages that are loaded first have higher priority.
+
+```{r warning = FALSE, message = FALSE}
+# Reorders bioc packages, so that mia and miaViz are first and have higher priority
+bioc_pkg <- c(bioc_pkg[ bioc_pkg %in% c("mia", "miaViz") ], 
+              bioc_pkg[ !bioc_pkg %in% c("mia", "miaViz") ] ) 
+
+# Loading all packages into session. Returns true if package was successfully loaded.
+sapply(c(bioc_pkg, cran_pkg), require, character.only = TRUE)
+```
+
+
+### Load data
+
+Multi-assay data can be stored in [altExp](https://microbiome.github.io/OMA/containers.html#alternative-experiments) 
+slot of TreeSE or [MAE](https://microbiome.github.io/OMA/containers.html#multiassayexperiments) 
+data container. 
+
+Different data sets are first imported into SE or TreeSE data container similarly
+to the case when only one data set is present. After that different data sets are 
+combined into the same data container. Result is one TreeSE object with alternative
+experiment in altExp slot, or MAE object with multiple experiment in its 
+experiment slot. 
+
+As an example data, we use data from following publication: Hintikka L _et al._ (2021) 
+[Xylo-oligosaccharides in prevention of hepatic steatosis and adipose tissue inflammation: 
+associating taxonomic and metabolomic patterns in fecal microbiotas with 
+biclustering](https://doi.org/10.3390/ijerph18084049).
+
+In this article, mice were fed with high-fat and low-fat diets with or without prebiotics.
+The purpose of this was to study if prebiotics would reduce the negative impacts
+of high-fat diet. 
+
+This example data can be loaded from microbiomeDataSets. The data is already in MAE
+format. It includes three different experiments: microbial abundance data, 
+metabolite concentrations, and data about different biomarkers. Help for importing
+data into SE object you can find from [here](https://github.com/microbiome/mia/issues/155).
+
+For the sake of simplicity, we compare only fat-contents of diets. 
+
+```{r message=FALSE, warning=FALSE}
+# Load the data
+mae <- microbiomeDataSets::HintikkaXOData()
+
+# For simplicity, classify all high-fat diets as high-fat, and all the low-fat diets as low-fat diets
+colData(mae)$Diet <- ifelse(colData(mae)$Diet == "High-fat" | 
+                              colData(mae)$Diet == "High-fat + XOS", "High-fat", "Low-fat")
+
+# Drop off those bacteria that do not include information in Phylum or lower levels
+mae[[1]] <- mae[[1]][!is.na(rowData(mae[[1]])$Phylum), ]
+
+# Clean taxonomy data, so that names do not include addtional characters
+rowData(mae[[1]]) <- DataFrame(apply(rowData(mae[[1]]), 2, str_remove, pattern = "._[0-9]__"))
+
+mae
+```
+
+### Alpha diversity
+
+Alpha diversity indices represent how abundances are distributed between different species.
+More information about alpha diversity you can find from 
+[here](https://microbiome.github.io/OMA/alpha-diversity.html#alpha-diversity).
+
+We can see that there is no statistically significant difference between 
+high-fat and low-fat diets. 
+
+```{r message=FALSE, warning=FALSE}
+# Add sample meta data to microbiome data
+colData(mae[[1]]) <- colData(mae)
+# Calculate shannon index
+mae[[1]] <- estimateDiversity(mae[[1]], index = "shannon")
+# Get sample meta data as data frame
+df <- as.data.frame(colData(mae[[1]]))
+# Plot shannon index, compare diets
+ggplot(df, aes_string(x = "Diet", y = "shannon")) +
+  geom_boxplot(outlier.shape = NA) + # Remove outliers because jitter plot is also plotted
+  geom_jitter() +
+  xlab("Groups") +
+  ylab("Shannon diversity index") +
+  theme_bw()
+```
+
+### Beta diversity
+
+Beta diversity measures the diffrence between samples.
+More information about beta diversity you can find from 
+[here](https://microbiome.github.io/OMA/beta-diversity.html).
+
+We can see that data is clustered into 3 clusters. Bacterial composition of 
+high-fat diet is different from bacterial composition of low-fat diet.
+
+```{r message=FALSE, warning=FALSE, fig.width=7, fig.height=4.5}
+# Gets relative abundances
+mae[[1]] <- transformSamples(mae[[1]], method = "relabundance")
+# Relative abundance table
+rel_abund_assay <- assays(mae[[1]])$relabundance
+
+# Transposes it to get taxa to columns
+rel_abund_assay <- t(rel_abund_assay)
+# Calculates Bray-Curtis dissimilarities between samples. Because taxa is in columns,
+# it is used to compare different samples.
+bray_curtis_dis <- vegan::vegdist(rel_abund_assay, method = "bray")
+
+# Does principal coordinate analysis
+bray_curtis_pcoa <- ecodist::pco(bray_curtis_dis)
+
+# Creates a data frame from principal coordinates and colData?
+bray_curtis_pcoa_df <- data.frame(PC1 = bray_curtis_pcoa$vectors[,1], 
+                                  PC2 = bray_curtis_pcoa$vectors[,2],
+                                  colData(mae[[1]]))
+
+# Does the permanova analysis
+p_values <- list()
+for(pc in c("PC1", "PC2")){
+  # Creates a formula from objects
+  formula <- as.formula(paste0(pc, " ~ ", "Diet"))
+  # Does the permanova analysis
+  p_values[[pc]] <- vegan::adonis(formula, data = bray_curtis_pcoa_df,
+                                permutations = 9999, method = "euclidean"
+                                )$aov.tab["Diet", "Pr(>F)"]
+}
+
+# Creates a plot
+plot <- ggplot(data = bray_curtis_pcoa_df, aes_string(x = "PC1", y = "PC2", color = "Diet")) +
+  geom_point(size = 3) +
+  labs(title = paste0("PCoA beta diversity ordination for microbiome samples"),
+       x = paste0("PC1 (p = ", p_values[["PC1"]], ")"), 
+       y = paste0("PC2 (p = ", p_values[["PC2"]], ")")) +
+  theme_bw(12) 
+
+print(plot)
+```
+
+### Cross-correlation
+
+Next we can do cross-correlation analysis. With it we can analyse, if one feature 
+correlates with other feature. Here we analyse if individual bacteria genera correlate
+with concentrations of individual metabolites. "If this bacteria is present, is this 
+metabolite's concentration then low or high"?
+
+Because we are doing multiple testing, it needs to be taken into account by adjusting
+the p-values. Because of the probability, sometimes unlikely thing happens if same thing
+is done multiple times. Same thing with p-values: if we test multiple times, it is likely
+that we get statistically significant result even though really there is no statistically
+significant difference.
+
+Because of p-value adjustment strictens p-value threshold, individual differences need to be
+even more significant. That is why we usualy want to avoid doing "unnecessary" tests. 
+
+Here, we subset metabolites and take only those that vary the most. If their variation 
+between samples is small, it is unlikely that we will find statistically significant
+differences between samples.
+
+```{r message=FALSE, warning=FALSE}
+# Threshold: metabolites whose (cv > +threshold or cv < -threshold), will be included
+cv_threshold <- 0.5
+metabolite_trans <- "nmr"
+
+# Get the data
+metabolite_tse <- mae[[2]]
+
+# Calculate coeffieicnt of variation of individual metabolites
+df <- data.frame(cv = apply(assay(metabolite_tse, metabolite_trans), 1, function(x){sd(x)/mean(x)}))
+
+# Plot them as a histogram, and show a line that is used as a threshold
+plot <- ggplot(df, aes(x = cv)) +
+  geom_histogram(bins = 50, color="darkred", fill="lightblue") +
+  labs(x = "CV", y = "metabolite frequency", 
+       title = "Distribution of coefficient of variation of log10 concentration of metabolites") +
+  geom_vline(xintercept = cv_threshold, color = "red") +
+  geom_text(aes(cv_threshold, 6, label = 
+                  paste0("CV threshold (", cv_threshold, ")"), vjust = 2, angle=90)) +
+  geom_vline(xintercept = -cv_threshold, color = "red") +
+  geom_text(aes(-cv_threshold, 6, label = 
+                  paste0("CV threshold (", -cv_threshold, ")"), vjust = -1, angle=90))
+
+print(plot)
+
+# Get those metabolites that are over threshold
+metabolites_over_th <- rownames(df[df$cv > cv_threshold | df$cv < -cv_threshold, , drop = FALSE])
+# Ignore those metabolites that do not have name / are NA
+metabolites_over_th <- metabolites_over_th[!str_detect(metabolites_over_th, "NA")]
+```
+
+Next we can do the cross-correlation heatmap. From the heatmap we can see that
+certain bacteria correlate with certain metabolites statistically significantly.
+
+For example, we can see that when the abundance of Ruminiclostridium 5 is high, 
+the concentration of nicotinate tends to be relatively higher. Also we can see that
+when concentration butyrate is low, then abudnance of Lachnoclostridium tends to be
+higher or vice versa. 
+
+```{r message=FALSE, warning=FALSE, fig.width=10, fig.height=8}
+rank <- "Genus"
+prevalence <- 0.2
+detection <- 0.01
+taxa_trans <-  "clr"
+metabolite_trans <- "nmr"
+
+# Get bacterial data
+taxa_tse <- mae[[1]]
+# Agglomerate at Genus level
+taxa_tse <- agglomerateByRank(taxa_tse, rank = rank)
+# Do CLR transformation
+taxa_tse <- transformSamples(taxa_tse, method = "clr", pseudocount = 1)
+
+# Get metabolite data
+metabolite_tse <- mae[[2]]
+# Subset metabolite data
+metabolite_tse <- metabolite_tse[metabolites_over_th, ]
+
+# Subset bactrial data by its prevalence. Bacteria whose prevalences are over threshold are included
+taxa_tse <- subsetByPrevalentTaxa(taxa_tse, prevalence = prevalence, detection = detection)
+
+# Define data sets to cross-correlate
+x <- t(assay(taxa_tse, taxa_trans))
+y <- t(assay(metabolite_tse, "nmr"))
+# If there are duplicated taxa names, makes them unique
+colnames(x) <- str_remove(colnames(x), paste0(rank, ":"))
+colnames(x) <- make.unique(colnames(x))
+
+# Cross correlate data sets
+correlations <- microbiome::associate(x, y, method = "spearman", mode = "matrix")
+
+# For plotting purpose, convert p-values, under 0.05 are marked with "X"
+p_threshold <- 0.05
+p_values <- ifelse(correlations$p.adj<p_threshold, "X", "")
+
+# Scale colors
+breaks <- seq(-ceiling(max(abs(correlations$cor))), ceiling(max(abs(correlations$cor))), 
+              length.out = ifelse( max(abs(correlations$cor))>5, 
+                                   2*ceiling(max(abs(correlations$cor))), 10 ) )
+colors <- colorRampPalette(c("darkblue", "blue", "white", "red", "darkred"))(length(breaks)-1)
+
+# Create a heatmap
+print(pheatmap(correlations$cor, display_numbers = p_values,
+main = paste0("Correlations between bacteria and metabolites (statistically significants marked with X)"),
+         fontsize = 10,
+         breaks = breaks,
+         color = colors, 
+fontsize_number = 20) )
+```
+
+```{r warning = FALSE, message = FALSE}
+sessionInfo()
+```
