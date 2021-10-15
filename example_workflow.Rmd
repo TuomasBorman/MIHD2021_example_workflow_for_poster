@@ -50,7 +50,7 @@ packages are installed.
 ```{r warning = FALSE, message = FALSE}
 # List of packages that we need from cran and bioc 
 cran_pkg <- c("BiocManager", "ggplot2", "pheatmap", "stringr")
-bioc_pkg <- c("microbiome", "microbiomeDataSets", "mia")
+bioc_pkg <- c("ANCOMBC", "microbiome", "microbiomeDataSets", "mia")
 
 # Gets those packages that are already installed
 cran_pkg_already_installed <- cran_pkg[ cran_pkg %in% installed.packages() ]
@@ -66,9 +66,7 @@ bioc_pkg_to_be_installed <- setdiff(bioc_pkg, bioc_pkg_already_installed)
 if( length(cran_pkg_to_be_installed) ) {
    install.packages(cran_pkg_to_be_installed)
 }
-```
 
-```{r warning = FALSE, message = FALSE}
 # If there are packages that need to be installed, installs them from Bioconductor
 if( length(bioc_pkg_to_be_installed) ) {
    BiocManager::install(bioc_pkg_to_be_installed, ask = F)
@@ -137,31 +135,6 @@ rowData(mae[[1]]) <- DataFrame(apply(rowData(mae[[1]]), 2,
 mae
 ```
 
-### Alpha diversity
-
-Alpha diversity indices represent how abundances are distributed between different species.
-More information about alpha diversity you can find from 
-[here](https://microbiome.github.io/OMA/alpha-diversity.html#alpha-diversity).
-
-We can see that there is no statistically significant difference between 
-high-fat and low-fat diets. 
-
-```{r message=FALSE, warning=FALSE}
-# Add sample meta data to microbiome data
-colData(mae[[1]]) <- colData(mae)
-# Calculate shannon index
-mae[[1]] <- estimateDiversity(mae[[1]], index = "shannon")
-# Get sample meta data as data frame
-df <- as.data.frame(colData(mae[[1]]))
-# Plot shannon index, compare diets
-ggplot(df, aes_string(x = "Diet", y = "shannon")) +
-  geom_boxplot(outlier.shape = NA) + # Remove outliers because jitter plot is also plotted
-  geom_jitter() +
-  xlab("Groups") +
-  ylab("Shannon diversity index") +
-  theme_bw()
-```
-
 ### Beta diversity
 
 Beta diversity measures the diffrence between samples.
@@ -189,7 +162,7 @@ bray_curtis_pcoa <- ecodist::pco(bray_curtis_dis)
 # Creates a data frame from principal coordinates and colData?
 bray_curtis_pcoa_df <- data.frame(PC1 = bray_curtis_pcoa$vectors[,1], 
                                   PC2 = bray_curtis_pcoa$vectors[,2],
-                                  colData(mae[[1]]))
+                                  colData(mae))
 
 # Does the permanova analysis
 p_values <- list()
@@ -212,6 +185,121 @@ plot <- ggplot(data = bray_curtis_pcoa_df,
   theme_bw(12) 
 
 print(plot)
+```
+
+### Differential Abundance
+
+With differential abundance analysis (DAA), we try to find if there are differences 
+in taxon abundance between diets. You can find more information about DAA from
+[here](https://microbiome.github.io/OMA/differential-abundance.html).
+
+Here, we use ANCOM-BC method. 
+According to Lin H. & Peddada SD (2020) [Analysis of compositions of microbiomes 
+with bias correction](https://doi.org/10.1038/s41467-020-17041-7), ANCOM-BC has
+high power and low FDR even when proportion of differential abundant taxa is low.
+
+```{r}
+rank <- "Genus"
+# Get bacteria data
+tse <- mae[[1]]
+# Agglomerate at Genus level
+tse <- agglomerateByRank(tse, rank = rank)
+# Do CLR transformation
+tse <- transformSamples(tse, method = "clr", pseudocount = 1)
+# Subset so that only most prevalent bacteria are included
+tse <- subsetByPrevalentTaxa(tse, detection = 0.001, prevalence = 0.2)
+# Add colData to the object
+colData(tse) <- colData(mae)
+
+```
+
+```{r}
+# ANCOM-BC is not supporting TreeSE data container yet, so we have to 
+# convert TreeSE into phyloseq. 
+pseq <- makePhyloseqFromTreeSummarizedExperiment(tse)
+
+# Perform the analysis 
+out = ancombc(
+  phyloseq = pseq, 
+  formula = "Diet", 
+  p_adj_method = "fdr"
+)
+# Store the results in res 
+res <- out$res
+```
+
+From the table below, we can see that these bacteria, whose abundances are the most
+different between diets, have quite low mean realtive abundance. 
+
+```{r}
+# Get p-values
+p_values <- res$q_val
+
+# Name the column 
+colnames(p_values) <- "p_values" 
+
+# Take 10 first bacteria that have lowest p-values
+p_lower <- rownames(head(p_values[order(p_values$p_values), , drop = FALSE], 10))
+# Drop those bacteria that do not have sufficient information
+p_lower <- p_lower[!str_detect(p_lower, pattern = "uncultured")]
+# Subset bacteria data, only bacteria with lowest p-values are included
+tse <- tse[ p_lower , ]
+
+# Calculate prevalence
+df <- as.data.frame(apply(assay(tse, "counts"), 1, function(x){sum(x>0)}))
+colnames(df) <- "prevalence"
+# Calculate mean relative abundances
+df_temp <- as.data.frame(apply(assay(tse, "relabundance"), 1, mean))
+colnames(df_temp) <- "relabundance"
+# Combine prevalence and relative abundances into same data frame
+df <- cbind(df, df_temp)
+# Add p-values to the data frame
+df <- merge(format(p_values, scientific = TRUE), df, by = 0)
+
+# Add taxa names to rownames and remove the column
+rownames(df) <- df$Row.names
+df$Row.names <- NULL
+
+knitr::kable(df, caption = paste0(" P-values of abundance in comp. vs. uncomp, 
+                           number of samples where counts was found (total = ", dim(tse)[2], ") and 
+                           mean relative abundance"))
+
+```
+
+From the plot below, we can see that abundances of certain taxa differ significantly 
+between high-fat and low-fat diets.
+
+```{r, fig.width=7.5, fig.height=5.5}
+# Make names tidier
+rownames(tse) <- str_remove_all(rownames(tse), "\\)|\\[")
+rownames(tse) <- str_remove_all(rownames(tse), "\\)|\\]")
+rownames(tse) <- str_remove_all(rownames(tse), "Genus:")
+# Make names tidier
+rownames(p_values) <- str_remove_all(rownames(p_values), "\\)|\\[")
+rownames(p_values) <- str_remove_all(rownames(p_values), "\\)|\\]")
+rownames(p_values) <- str_remove_all(rownames(p_values), "Genus:")
+
+# Melts the data
+df <- meltAssay(tse, abund_values = "clr", add_col_data = TRUE)
+
+# Add p-values
+df <- dplyr::left_join(df, tibble::rownames_to_column(p_values), by = c("FeatureID" = "rowname"))
+
+# Add p-values to names
+df$FeatureID <- paste0(df$FeatureID, " (p = ", df$p_values, ")")
+
+# Adjust names so that bacteria names are not that wide
+df$FeatureID <- stringr::str_wrap(df$FeatureID, 25)
+
+# Create the plot
+ggplot(df, aes(x = FeatureID, y = clr)) + theme_bw()+
+  geom_boxplot(aes(fill = Diet), size = 0.5, outlier.shape = NA, alpha = 0.5) +
+  geom_point(aes(color = Diet), position=position_jitterdodge(jitter.width = 0.25), size = 1) +
+  theme_bw(11) +
+  theme(axis.text.x = element_text(angle=25, vjust = 0.5, hjust=0.5)) +
+  labs(title = paste0("Abundances of most significant bacteria (rank = ", rank, ")"))+
+  xlab("Taxa") +
+  ylab("CLR abundance") 
 ```
 
 ### Cross-correlation
