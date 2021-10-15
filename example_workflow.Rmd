@@ -1,5 +1,5 @@
 ---
-title: "Clinical microbiome data science - example workflow"
+title: "Clinical microbiome data science: example workflow"
 output:
   html_document:
     df_print: paged
@@ -13,13 +13,13 @@ It was held on 13-15 October 2021.
 Other material about poster and the _miaverse_ project you can find by following the links below
 
 -   Poster
-    -   [poster](https://github.com/microbiome/outreach/blob/main/posters/20211013_MIHD21/miaverse_poster_20210929.pdf)
-    -   [abstract](https://github.com/microbiome/outreach/blob/main/posters/20211013_MIHD21/miaverse_poster_abstract_20210901.pdf)
-    -   [lightning talk](https://www.youtube.com/watch?v=A4URIEx9v1s)
+    -   [poster](https://github.com/TuomasBorman/MIHD2021_example_workflow_for_poster/blob/main/miaverse_poster_20210929.pdf) (https://github.com/TuomasBorman/MIHD2021_example_workflow_for_poster/blob/main/miaverse_poster_20210929.pdf)
+    -   [abstract](https://github.com/TuomasBorman/MIHD2021_example_workflow_for_poster/blob/main/miaverse_poster_abstract_20210901.pdf) (https://github.com/TuomasBorman/MIHD2021_example_workflow_for_poster/blob/main/miaverse_poster_abstract_20210901.pdf)
+    -   [lightning talk](https://www.youtube.com/watch?v=A4URIEx9v1s) (https://www.youtube.com/watch?v=A4URIEx9v1s)
 
--   _miaverse_
-    -   [homepage](https://microbiome.github.io/)
-    -   [Orchestrating Microbiome Analysis](https://microbiome.github.io/OMA/)
+-   The _miaverse_ project
+    -   [homepage](https://microbiome.github.io/) (https://microbiome.github.io/)
+    -   [Orchestrating Microbiome Analysis](https://microbiome.github.io/OMA/) (https://microbiome.github.io/OMA/)
 
 
 ## Example workflow
@@ -35,7 +35,7 @@ different types of data in a same container. Because of that, the _miaverse_ is
 well-suitable for multi-assay microbiome data which incorporates different types 
 of complementary data sources in a single reproducible workflow. 
 
-This is a reproducible workflow. **You can run this example workflow**
+This is a reproducible workflow. **You can run this example workflow:**
 
 -   Copy-paste code chunks and run them
 -   Download R markdown file and run it
@@ -111,7 +111,7 @@ of high-fat diet.
 This example data can be loaded from microbiomeDataSets. The data is already in MAE
 format. It includes three different experiments: microbial abundance data, 
 metabolite concentrations, and data about different biomarkers. Help for importing
-data into SE object you can find from [here](https://github.com/microbiome/mia/issues/155).
+data into SE object you can find from [here](https://microbiome.github.io/OMA/containers.html#loading-experimental-microbiome-data).
 
 For the sake of simplicity, we compare only fat-contents of diets. 
 
