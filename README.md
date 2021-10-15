@@ -20,4 +20,4 @@ Other material about poster and the _miaverse_ project you can find by following
 -   [html](https://github.com/TuomasBorman/MIHD2021_example_workflow_for_poster/blob/main/example_workflow.html)
 -   [pdf](https://github.com/TuomasBorman/MIHD2021_example_workflow_for_poster/blob/main/example_workflow.pdf)
 
-You can load them by clicking _Download_ button (at the upper right corner).
+You can load them by clicking _Download_ button or in root folder _Code_ --> _Download ZIP_ (at the upper right corner).
