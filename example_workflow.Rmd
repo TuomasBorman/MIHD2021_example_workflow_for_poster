@@ -194,9 +194,9 @@ in taxon abundance between diets. You can find more information about DAA from
 [here](https://microbiome.github.io/OMA/differential-abundance.html).
 
 Here, we use ANCOM-BC method. 
-According to Lin H. & Peddada SD (2020) [Analysis of compositions of microbiomes 
-with bias correction](https://doi.org/10.1038/s41467-020-17041-7), ANCOM-BC has
-high power and low FDR even when proportion of differential abundant taxa is low.
+According to Lin H. & Peddada SD (2020) 
+[Analysis of compositions of microbiomes with bias correction](https://doi.org/10.1038/s41467-020-17041-7)., 
+ANCOM-BC has high power and low FDR even when proportion of differential abundant taxa is low.
 
 ```{r}
 rank <- "Genus"
@@ -261,8 +261,8 @@ rownames(df) <- df$Row.names
 df$Row.names <- NULL
 
 knitr::kable(df, caption = paste0(" P-values of abundance in comp. vs. uncomp, 
-                           number of samples where counts was found (total = ", dim(tse)[2], ") and 
-                           mean relative abundance"))
+                           number of samples where counts was found (total = ", 
+                           dim(tse)[2], ") and mean relative abundance"))
 
 ```
 
@@ -283,7 +283,8 @@ rownames(p_values) <- str_remove_all(rownames(p_values), "Genus:")
 df <- meltAssay(tse, abund_values = "clr", add_col_data = TRUE)
 
 # Add p-values
-df <- dplyr::left_join(df, tibble::rownames_to_column(p_values), by = c("FeatureID" = "rowname"))
+df <- dplyr::left_join(df, tibble::rownames_to_column(p_values), 
+                       by = c("FeatureID" = "rowname"))
 
 # Add p-values to names
 df$FeatureID <- paste0(df$FeatureID, " (p = ", df$p_values, ")")
@@ -294,8 +295,9 @@ df$FeatureID <- stringr::str_wrap(df$FeatureID, 25)
 # Create the plot
 ggplot(df, aes(x = FeatureID, y = clr)) + theme_bw()+
   geom_boxplot(aes(fill = Diet), size = 0.5, outlier.shape = NA, alpha = 0.5) +
-  geom_point(aes(color = Diet), position=position_jitterdodge(jitter.width = 0.25), size = 1) +
-  theme_bw(11) +
+  geom_point(aes(color = Diet), 
+             position = position_jitterdodge(jitter.width = 0.25), size = 1) +
+  theme_bw(10) +
   theme(axis.text.x = element_text(angle=25, vjust = 0.5, hjust=0.5)) +
   labs(title = paste0("Abundances of most significant bacteria (rank = ", rank, ")"))+
   xlab("Taxa") +
