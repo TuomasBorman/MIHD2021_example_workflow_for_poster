@@ -15,11 +15,11 @@ Other material about poster and the _miaverse_ project you can find by following
 -   Poster
     -   [poster](https://github.com/TuomasBorman/MIHD2021_example_workflow_for_poster/blob/main/miaverse_poster_20210929.pdf)
     -   [abstract](https://github.com/TuomasBorman/MIHD2021_example_workflow_for_poster/blob/main/miaverse_poster_abstract_20210901.pdf)
-    -   [lightning talk](https://www.youtube.com/watch?v=A4URIEx9v1s) (https://www.youtube.com/watch?v=A4URIEx9v1s)
+    -   [lightning talk](https://www.youtube.com/watch?v=A4URIEx9v1s)
 
 -   The _miaverse_ project
-    -   [homepage](https://microbiome.github.io/) (https://microbiome.github.io/)
-    -   [Orchestrating Microbiome Analysis](https://microbiome.github.io/OMA/) (https://microbiome.github.io/OMA/)
+    -   [homepage](https://microbiome.github.io/) 
+    -   [Orchestrating Microbiome Analysis](https://microbiome.github.io/OMA/)
 
 
 ## Example workflow
