@@ -52,11 +52,11 @@ packages are installed.
 cran_pkg <- c("BiocManager", "ggplot2", "pheatmap", "stringr")
 bioc_pkg <- c("ANCOMBC", "microbiome", "microbiomeDataSets", "mia")
 
-# Gets those packages that are already installed
+# Get those packages that are already installed
 cran_pkg_already_installed <- cran_pkg[ cran_pkg %in% installed.packages() ]
 bioc_pkg_already_installed <- bioc_pkg[ bioc_pkg %in% installed.packages() ]
 
-# Gets those packages that need to be installed
+# Get those packages that need to be installed
 cran_pkg_to_be_installed <- setdiff(cran_pkg, cran_pkg_already_installed)
 bioc_pkg_to_be_installed <- setdiff(bioc_pkg, bioc_pkg_already_installed)
 ```
@@ -78,12 +78,12 @@ Some function names occur in multiple packages. That is why miaverse's packages
 mia and miaViz are prioritized. Packages that are loaded first have higher priority.
 
 ```{r warning = FALSE, message = FALSE}
-# Reorders bioc packages, so that mia and miaViz are first and have higher priority
+# Reorder bioc packages, so that mia and miaViz are first and have higher priority
 bioc_pkg <- c(bioc_pkg[ bioc_pkg %in% c("mia", "miaViz") ], 
               bioc_pkg[ !bioc_pkg %in% c("mia", "miaViz") ] ) 
 
 # Loading all packages into session. Returns true if package was successfully loaded.
-sapply(c(bioc_pkg, cran_pkg), require, character.only = TRUE)
+data.frame(loaded = sapply(c(bioc_pkg, cran_pkg), require, character.only = TRUE))
 ```
 
 
