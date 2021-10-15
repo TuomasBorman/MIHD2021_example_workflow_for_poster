@@ -121,15 +121,18 @@ For the sake of simplicity, we compare only fat-contents of diets.
 # Load the data
 mae <- microbiomeDataSets::HintikkaXOData()
 
-# For simplicity, classify all high-fat diets as high-fat, and all the low-fat diets as low-fat diets
+# For simplicity, classify all high-fat diets as high-fat, and all the low-fat 
+# diets as low-fat diets
 colData(mae)$Diet <- ifelse(colData(mae)$Diet == "High-fat" | 
-                              colData(mae)$Diet == "High-fat + XOS", "High-fat", "Low-fat")
+                              colData(mae)$Diet == "High-fat + XOS", 
+                            "High-fat", "Low-fat")
 
 # Drop off those bacteria that do not include information in Phylum or lower levels
 mae[[1]] <- mae[[1]][!is.na(rowData(mae[[1]])$Phylum), ]
 
 # Clean taxonomy data, so that names do not include addtional characters
-rowData(mae[[1]]) <- DataFrame(apply(rowData(mae[[1]]), 2, str_remove, pattern = "._[0-9]__"))
+rowData(mae[[1]]) <- DataFrame(apply(rowData(mae[[1]]), 2, 
+                                     str_remove, pattern = "._[0-9]__"))
 
 mae
 ```
@@ -200,7 +203,8 @@ for(pc in c("PC1", "PC2")){
 }
 
 # Creates a plot
-plot <- ggplot(data = bray_curtis_pcoa_df, aes_string(x = "PC1", y = "PC2", color = "Diet")) +
+plot <- ggplot(data = bray_curtis_pcoa_df, 
+               aes_string(x = "PC1", y = "PC2", color = "Diet")) +
   geom_point(size = 3) +
   labs(title = paste0("PCoA beta diversity ordination for microbiome samples"),
        x = paste0("PC1 (p = ", p_values[["PC1"]], ")"), 
@@ -239,13 +243,15 @@ metabolite_trans <- "nmr"
 metabolite_tse <- mae[[2]]
 
 # Calculate coeffieicnt of variation of individual metabolites
-df <- data.frame(cv = apply(assay(metabolite_tse, metabolite_trans), 1, function(x){sd(x)/mean(x)}))
+df <- data.frame(cv = apply(assay(metabolite_tse, metabolite_trans), 1, 
+                            function(x){sd(x)/mean(x)}))
 
 # Plot them as a histogram, and show a line that is used as a threshold
 plot <- ggplot(df, aes(x = cv)) +
   geom_histogram(bins = 50, color="darkred", fill="lightblue") +
   labs(x = "CV", y = "metabolite frequency", 
-       title = "Distribution of coefficient of variation of log10 concentration of metabolites") +
+       title = "Distribution of coefficient of 
+       variation of log10 concentration of metabolites") +
   geom_vline(xintercept = cv_threshold, color = "red") +
   geom_text(aes(cv_threshold, 6, label = 
                   paste0("CV threshold (", cv_threshold, ")"), vjust = 2, angle=90)) +
@@ -256,7 +262,8 @@ plot <- ggplot(df, aes(x = cv)) +
 print(plot)
 
 # Get those metabolites that are over threshold
-metabolites_over_th <- rownames(df[df$cv > cv_threshold | df$cv < -cv_threshold, , drop = FALSE])
+metabolites_over_th <- rownames(df[df$cv > cv_threshold | 
+                                     df$cv < -cv_threshold, , drop = FALSE])
 # Ignore those metabolites that do not have name / are NA
 metabolites_over_th <- metabolites_over_th[!str_detect(metabolites_over_th, "NA")]
 ```
@@ -288,8 +295,11 @@ metabolite_tse <- mae[[2]]
 # Subset metabolite data
 metabolite_tse <- metabolite_tse[metabolites_over_th, ]
 
-# Subset bactrial data by its prevalence. Bacteria whose prevalences are over threshold are included
-taxa_tse <- subsetByPrevalentTaxa(taxa_tse, prevalence = prevalence, detection = detection)
+# Subset bactrial data by its prevalence. Bacteria whose prevalences are over 
+# threshold are included
+taxa_tse <- subsetByPrevalentTaxa(taxa_tse, 
+                                  prevalence = prevalence, 
+                                  detection = detection)
 
 # Define data sets to cross-correlate
 x <- t(assay(taxa_tse, taxa_trans))
@@ -309,11 +319,13 @@ p_values <- ifelse(correlations$p.adj<p_threshold, "X", "")
 breaks <- seq(-ceiling(max(abs(correlations$cor))), ceiling(max(abs(correlations$cor))), 
               length.out = ifelse( max(abs(correlations$cor))>5, 
                                    2*ceiling(max(abs(correlations$cor))), 10 ) )
-colors <- colorRampPalette(c("darkblue", "blue", "white", "red", "darkred"))(length(breaks)-1)
+colors <- colorRampPalette(c("darkblue", "blue", "white", 
+                             "red", "darkred"))(length(breaks)-1)
 
 # Create a heatmap
 print(pheatmap(correlations$cor, display_numbers = p_values,
-main = paste0("Correlations between bacteria and metabolites (statistically significants marked with X)"),
+main = paste0("Correlations between bacteria and metabolites 
+              (statistically significants marked with X)"),
          fontsize = 10,
          breaks = breaks,
          color = colors, 
@@ -321,5 +333,5 @@ fontsize_number = 20) )
 ```
 
 ```{r warning = FALSE, message = FALSE}
-sessionInfo()
+devtools::session_info()
 ```
