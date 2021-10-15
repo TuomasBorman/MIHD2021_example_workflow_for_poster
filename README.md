@@ -1,4 +1,4 @@
-# MIHD2021_example_workflow_for_poster
+# MIHD2021: Example workflow for poster
 This in an example data analysis for poster. Poster was presented in conference 
 [Microbiome Interactions in Health and Disease](https://coursesandconferences.wellcomeconnectingscience.org/event/microbiome-interactions-in-health-and-disease-virtual-conference-20211013/). 
 It was held on 13-15 October 2021. 
