@@ -6,8 +6,8 @@ It was held on 13-15 October 2021.
 Other material about poster and the _miaverse_ project you can find by following the links below
 
 -   Poster
-    -   [poster](https://github.com/microbiome/outreach/blob/main/posters/20211013_MIHD21/miaverse_poster_20210929.pdf)
-    -   [abstract](https://github.com/microbiome/outreach/blob/main/posters/20211013_MIHD21/miaverse_poster_abstract_20210901.pdf)
+    -   [poster](https://github.com/TuomasBorman/MIHD2021_example_workflow_for_poster/blob/main/miaverse_poster_20210929.pdf)
+    -   [abstract](https://github.com/TuomasBorman/MIHD2021_example_workflow_for_poster/blob/main/miaverse_poster_abstract_20210901.pdf)
     -   [lightning talk](https://www.youtube.com/watch?v=A4URIEx9v1s)
 
 -   _miaverse_
